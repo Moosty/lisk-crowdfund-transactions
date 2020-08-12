@@ -34,6 +34,7 @@ export class RegisterTransaction extends BaseTransaction {
         description: tx.asset.description,
         site: tx.asset.site,
         image: tx.asset.image,
+        category: tx.asset.category,
       } as RegisterTxAsset;
     } else {
       this.asset = {} as RegisterTxAsset;
@@ -85,6 +86,9 @@ export class RegisterTransaction extends BaseTransaction {
     const imageBuffer = this.asset.image
       ? stringToBuffer(this.asset.image)
       : Buffer.alloc(0);
+    const categoryBuffer = this.asset.category
+      ? stringToBuffer(this.asset.category)
+      : Buffer.alloc(0);
 
     return Buffer.concat([
       voteTimeBuffer,
@@ -94,6 +98,7 @@ export class RegisterTransaction extends BaseTransaction {
       descriptionBuffer,
       siteBuffer,
       imageBuffer,
+      categoryBuffer,
     ]);
   }
 
@@ -157,6 +162,7 @@ export class RegisterTransaction extends BaseTransaction {
       description: this.asset.description,
       site: this.asset.site,
       image: this.asset.image,
+      category: this.asset.category,
       payments: [],
       investments: [],
       votes: [],

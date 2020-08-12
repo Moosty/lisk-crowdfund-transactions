@@ -32,6 +32,10 @@ export const RegisterAsset = {
     image: {
       type: 'string',
     },
+    category: {
+      type: 'string',
+      maxLength: 50,
+    }
   }
 }
 

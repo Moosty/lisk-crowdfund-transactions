@@ -19,6 +19,7 @@ export interface CrowdfundAccountAsset {
   readonly image: string;
   readonly startFunding: number;
   readonly startProject: number;
+  readonly category: string;
 }
 
 export interface Payment {
@@ -103,6 +104,7 @@ export interface RegisterTxAsset {
   readonly description: string;
   readonly site: string; // url
   readonly image: string; // base64 image
+  readonly category: string;
 }
 
 export interface StartTxAsset {

@@ -1,21 +1,21 @@
-import {stringToBuffer, getAddressFromPublicKey, intToBuffer} from '@liskhq/lisk-cryptography';
+import {getAddressFromPublicKey, intToBuffer, stringToBuffer} from '@liskhq/lisk-cryptography';
 import {validator} from '@liskhq/lisk-validator';
 import {
   BaseTransaction,
+  constants,
+  convertToAssetError,
   StateStore,
   StateStorePrepare,
   TransactionError,
-  convertToAssetError,
-  constants,
 } from '@liskhq/lisk-transactions';
 
 import {RegisterAsset} from '../schemas';
-import {RegisterTxAsset, RegisterTx} from '../types';
+import {RegisterTx, RegisterTxAsset} from '../types';
 import {assetBytesToPublicKey} from '../utils';
 import {FUNDING_STATUS, REGISTER_TYPE} from "../constants";
 
 export class RegisterTransaction extends BaseTransaction {
-  readonly asset: RegisterTxAsset;
+  public asset: RegisterTxAsset;
   public static TYPE = REGISTER_TYPE;
 
   public constructor(rawTransaction: unknown) {
@@ -26,7 +26,7 @@ export class RegisterTransaction extends BaseTransaction {
 
     if (tx.asset) {
       this.asset = {
-        fundraiser: tx.asset.fundraiser,
+        fundraiser: tx.asset.fundraiser ? tx.asset.fundraiser : null,
         goal: tx.asset.goal,
         voteTime: tx.asset.voteTime,
         periods: tx.asset.periods,
@@ -35,6 +35,7 @@ export class RegisterTransaction extends BaseTransaction {
         site: tx.asset.site,
         image: tx.asset.image,
         category: tx.asset.category,
+        start: tx.asset.start,
       } as RegisterTxAsset;
     } else {
       this.asset = {} as RegisterTxAsset;
@@ -48,6 +49,10 @@ export class RegisterTransaction extends BaseTransaction {
       this.id,
       schemaErrors,
     ) as TransactionError[];
+
+    if (!this.asset.fundraiser) {
+      this.asset.fundraiser = getAddressFromPublicKey(this.getPublicKey());
+    }
 
     if (getAddressFromPublicKey(this.getPublicKey()) !== this.asset.fundraiser) {
       errors.push(new TransactionError(
@@ -68,6 +73,9 @@ export class RegisterTransaction extends BaseTransaction {
     );
     const periodsBuffer = intToBuffer(
       this.asset.periods, 2
+    );
+    const startBuffer = intToBuffer(
+      this.asset.start, 4
     );
     const goalBuffer = intToBuffer(
       this.asset.goal.toString(),
@@ -99,6 +107,7 @@ export class RegisterTransaction extends BaseTransaction {
       siteBuffer,
       imageBuffer,
       categoryBuffer,
+      startBuffer,
     ]);
   }
 
@@ -112,7 +121,7 @@ export class RegisterTransaction extends BaseTransaction {
         address: this.senderId,
       },
       {
-        address: this.asset.fundraiser,
+        address: this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey()),
       },
     ]);
   }
@@ -120,10 +129,11 @@ export class RegisterTransaction extends BaseTransaction {
   protected verifyAgainstTransactions(
     transactions: ReadonlyArray<RegisterTx>,
   ): ReadonlyArray<TransactionError> {
+    this.asset.fundraiser = this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey());
     return transactions
       .filter(
         tx =>
-        tx.type === this.type && tx.asset.fundraiser === this.asset.fundraiser,
+          tx.type === this.type && tx.asset.fundraiser === this.asset.fundraiser,
       )
       .map(
         tx =>
@@ -135,10 +145,12 @@ export class RegisterTransaction extends BaseTransaction {
           ),
       );
   }
+
   // todo: add total periods
   protected async applyAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
     const errors: TransactionError[] = [];
-    const fundraiser = await store.account.getOrDefault(this.asset.fundraiser);
+    this.asset.fundraiser = this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey());
+    const fundraiser = await store.account.getOrDefault(this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey()));
 
     if (fundraiser.balance > BigInt(0) || Object.keys(fundraiser.asset).length > 0) {
       errors.push(
@@ -176,7 +188,7 @@ export class RegisterTransaction extends BaseTransaction {
 
   protected async undoAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
     const errors: TransactionError[] = [];
-    const fundraiser = await store.account.get(this.asset.fundraiser);
+    const fundraiser = await store.account.get(this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey()));
 
     fundraiser.publicKey = undefined;
     fundraiser.asset = {};

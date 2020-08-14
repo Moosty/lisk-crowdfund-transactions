@@ -96,7 +96,7 @@ export interface RefundTxAsset {
 }
 
 export interface RegisterTxAsset {
-  readonly fundraiser: string;
+  fundraiser?: string;
   readonly goal: string; // amount to raise
   readonly voteTime: number; // every how many periods vote allowed
   readonly periods: number;
@@ -105,6 +105,7 @@ export interface RegisterTxAsset {
   readonly site: string; // url
   readonly image: string; // base64 image
   readonly category: string;
+  readonly start: number;
 }
 
 export interface StartTxAsset {

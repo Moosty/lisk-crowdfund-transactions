@@ -1,6 +1,6 @@
 export const RegisterAsset = {
   type: 'object',
-  required: ['fundraiser', 'goal', 'voteTime', 'periods', 'title', 'description', 'site', 'image'],
+  required: ['fundraiser', 'goal', 'voteTime', 'periods', 'title', 'description', 'site', 'image', 'category', 'start'],
   properties: {
     fundraiser: {
       type: 'string',
@@ -35,6 +35,10 @@ export const RegisterAsset = {
     category: {
       type: 'string',
       maxLength: 50,
+    },
+    start: {
+      type: 'number',
+      minimum: 1,
     }
   }
 }

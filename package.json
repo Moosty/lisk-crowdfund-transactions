@@ -1,5 +1,5 @@
 {
-  "name": "lisk-crowdfund-transactions",
+  "name": "@moosty/lisk-crowdfund-transactions",
   "version": "0.0.1",
   "description": "",
   "main": "dist-node/index.js",

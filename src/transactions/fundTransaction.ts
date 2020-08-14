@@ -1,4 +1,4 @@
-import {intToBuffer, stringToBuffer} from '@liskhq/lisk-cryptography';
+import {intToBuffer, stringToBuffer, getAddressFromPublicKey} from '@liskhq/lisk-cryptography';
 import {validator} from '@liskhq/lisk-validator';
 import {
   BaseTransaction,
@@ -69,7 +69,7 @@ export class FundTransaction extends BaseTransaction {
         address: this.senderId,
       },
       {
-        address: this.asset.fundraiser,
+        address: getAddressFromPublicKey(this.asset.fundraiser),
       },
     ]);
   }
@@ -88,7 +88,7 @@ export class FundTransaction extends BaseTransaction {
     const sender = await store.account.get(this.senderId);
     sender.balance -= BigInt(this.asset.amount);
     store.account.set(sender.address, sender);
-    const fundraiser = await store.account.getOrDefault(this.asset.fundraiser) as CrowdfundAccount;
+    const fundraiser = await store.account.getOrDefault(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     const fundsRaised = this.calculateFundsRaised(fundraiser.asset.investments);
 
     if (fundraiser.asset.startFunding + FUND_TIME < store.chain.lastBlockHeader.timestamp) {
@@ -157,7 +157,7 @@ export class FundTransaction extends BaseTransaction {
     sender.balance += BigInt(this.asset.amount);
     store.account.set(sender.address, sender);
 
-    const fundraiser = await store.account.get(this.asset.fundraiser) as CrowdfundAccount;
+    const fundraiser = await store.account.get(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     fundraiser.balance -= BigInt(this.asset.amount);
     fundraiser.asset = {
       ...fundraiser.asset,

@@ -51,16 +51,16 @@ export class RegisterTransaction extends BaseTransaction {
     ) as TransactionError[];
 
     if (!this.asset.fundraiser) {
-      this.asset.fundraiser = getAddressFromPublicKey(this.getPublicKey());
+      this.asset.fundraiser = this.getPublicKey();
     }
 
-    if (getAddressFromPublicKey(this.getPublicKey()) !== this.asset.fundraiser) {
+    if (this.getPublicKey() !== this.asset.fundraiser) {
       errors.push(new TransactionError(
         '`.asset.fundraiser` is not the correct fundraiser address for this registration.',
         this.id,
         '.asset.fundraiser',
         this.asset.fundraiser,
-        getAddressFromPublicKey(this.getPublicKey()),
+        this.getPublicKey(),
       ));
     }
 
@@ -121,7 +121,7 @@ export class RegisterTransaction extends BaseTransaction {
         address: this.senderId,
       },
       {
-        address: this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey()),
+        address: this.asset.fundraiser ? getAddressFromPublicKey(this.asset.fundraiser) : this.getPublicKey(),
       },
     ]);
   }
@@ -129,7 +129,7 @@ export class RegisterTransaction extends BaseTransaction {
   protected verifyAgainstTransactions(
     transactions: ReadonlyArray<RegisterTx>,
   ): ReadonlyArray<TransactionError> {
-    this.asset.fundraiser = this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey());
+    this.asset.fundraiser = this.asset.fundraiser ? this.asset.fundraiser : this.getPublicKey();
     return transactions
       .filter(
         tx =>
@@ -149,8 +149,8 @@ export class RegisterTransaction extends BaseTransaction {
   // todo: add total periods
   protected async applyAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
     const errors: TransactionError[] = [];
-    this.asset.fundraiser = this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey());
-    const fundraiser = await store.account.getOrDefault(this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey()));
+    this.asset.fundraiser = this.asset.fundraiser ? this.asset.fundraiser : this.getPublicKey();
+    const fundraiser = await store.account.getOrDefault(this.asset.fundraiser ? getAddressFromPublicKey(this.asset.fundraiser) : getAddressFromPublicKey(this.getPublicKey()));
 
     if (fundraiser.balance > BigInt(0) || Object.keys(fundraiser.asset).length > 0) {
       errors.push(
@@ -188,7 +188,7 @@ export class RegisterTransaction extends BaseTransaction {
 
   protected async undoAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
     const errors: TransactionError[] = [];
-    const fundraiser = await store.account.get(this.asset.fundraiser ? this.asset.fundraiser : getAddressFromPublicKey(this.getPublicKey()));
+    const fundraiser = await store.account.get(this.asset.fundraiser ? getAddressFromPublicKey(this.asset.fundraiser) : getAddressFromPublicKey(this.getPublicKey()));
 
     fundraiser.publicKey = undefined;
     fundraiser.asset = {};

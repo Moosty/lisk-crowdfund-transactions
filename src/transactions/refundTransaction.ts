@@ -1,4 +1,4 @@
-import {intToBuffer, stringToBuffer} from '@liskhq/lisk-cryptography';
+import {intToBuffer, stringToBuffer, getAddressFromPublicKey} from '@liskhq/lisk-cryptography';
 import {validator} from '@liskhq/lisk-validator';
 import {
   BaseTransaction,
@@ -67,7 +67,7 @@ export class RefundTransaction extends BaseTransaction {
         address: this.senderId,
       },
       {
-        address: this.asset.fundraiser,
+        address: getAddressFromPublicKey(this.asset.fundraiser),
       },
     ]);
   }
@@ -95,7 +95,7 @@ export class RefundTransaction extends BaseTransaction {
 
   protected async applyAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
     const errors: TransactionError[] = [];
-    const fundraiser = await store.account.getOrDefault(this.asset.fundraiser) as CrowdfundAccount;
+    const fundraiser = await store.account.getOrDefault(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     const sender = await store.account.get(this.senderId);
     const allowedToRefund = this.allowedToRefund(fundraiser);
     if (allowedToRefund === BigInt(0) || allowedToRefund !== BigInt(this.asset.amount)) {
@@ -162,7 +162,7 @@ export class RefundTransaction extends BaseTransaction {
     sender.balance -= BigInt(this.asset.amount);
     store.account.set(sender.address, sender);
 
-    const fundraiser = await store.account.get(this.asset.fundraiser) as CrowdfundAccount;
+    const fundraiser = await store.account.get(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     const payments = fundraiser.asset.payments
       .filter((payment) => payment.transaction !== this.id);
 

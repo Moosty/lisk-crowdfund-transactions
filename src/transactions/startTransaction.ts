@@ -1,4 +1,4 @@
-import {intToBuffer, stringToBuffer} from '@liskhq/lisk-cryptography';
+import {intToBuffer, stringToBuffer, getAddressFromPublicKey} from '@liskhq/lisk-cryptography';
 import {validator} from '@liskhq/lisk-validator';
 import {
   BaseTransaction,
@@ -61,7 +61,7 @@ export class StartTransaction extends BaseTransaction {
         address: this.senderId,
       },
       {
-        address: this.asset.fundraiser,
+        address: getAddressFromPublicKey(this.asset.fundraiser),
       },
     ]);
   }
@@ -77,7 +77,7 @@ export class StartTransaction extends BaseTransaction {
 
   protected async applyAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
     const errors: TransactionError[] = [];
-    const fundraiser = await store.account.getOrDefault(this.asset.fundraiser) as CrowdfundAccount;
+    const fundraiser = await store.account.getOrDefault(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     const fundsRaised = this.calculateFundsRaised(fundraiser.asset.investments);
 
     if (fundraiser.asset.owner !== this.senderId) {
@@ -140,7 +140,7 @@ export class StartTransaction extends BaseTransaction {
 
   protected async undoAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
     const errors: TransactionError[] = [];
-    const fundraiser = await store.account.get(this.asset.fundraiser) as CrowdfundAccount;
+    const fundraiser = await store.account.get(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     fundraiser.asset = {
       ...fundraiser.asset,
       status: FUNDED_STATUS,

@@ -178,7 +178,7 @@ export class RegisterTransaction extends BaseTransaction {
       payments: [],
       investments: [],
       votes: [],
-      startFunding: store.chain.lastBlockHeader.timestamp,
+      startFunding: this.asset.start,
       startProject: -1,
     };
 

@@ -81,7 +81,7 @@ export const FundAsset = {
     },
     message: {
       type: 'string',
-      maxLength: '64',
+      maxLength: 64,
     }
   }
 }
@@ -146,8 +146,8 @@ export const CommentAsset = {
     },
     comment: {
       type: 'string',
-      minLength: '1',
-      maxLength: '255'
+      minLength: 1,
+      maxLength: 255,
     },
     type: {
       type: 'integer',

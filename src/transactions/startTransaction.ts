@@ -80,13 +80,13 @@ export class StartTransaction extends BaseTransaction {
     const fundraiser = await store.account.getOrDefault(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     const fundsRaised = this.calculateFundsRaised(fundraiser.asset.investments);
 
-    if (fundraiser.asset.owner !== this.senderId) {
+    if (fundraiser.asset.owner !== this.senderPublicKey) {
       errors.push(
         new TransactionError(
           'Fundraiser is not owned by you.',
           this.id,
-          '.senderId',
-          this.senderId,
+          '.senderPublicKey',
+          this.senderPublicKey,
           fundraiser.asset.owner,
         )
       );

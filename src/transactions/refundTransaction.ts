@@ -76,8 +76,8 @@ export class RefundTransaction extends BaseTransaction {
         voteStake += BigInt(investment.amount);
       }
     });
-
-    return voteStake;
+    const totalInvestments = this.calculateFundsRaised(investments);
+    return totalInvestments ? voteStake / totalInvestments : BigInt(0);
   }
 
   public allowedToRefund(fundraiser: CrowdfundAccount): bigint {

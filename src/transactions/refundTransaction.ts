@@ -85,7 +85,7 @@ export class RefundTransaction extends BaseTransaction {
       .filter(p => p.type === 0)
       .map(p => BigInt(p.amount));
     const payedAmount = payedFilterd.length > 0 ? payedFilterd.reduce((accumulator, currentValue) => accumulator + currentValue) : BigInt(0);
-    const amountLeft = BigInt(fundraiser.asset.goal) - payedAmount;
+    const amountLeft = this.calculateFundsRaised(fundraiser.asset.investments) - payedAmount;
     return amountLeft * this.calculateVoteStake(fundraiser.asset.investments);
   }
 

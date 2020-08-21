@@ -1,4 +1,4 @@
-import {intToBuffer, stringToBuffer, getAddressFromPublicKey} from '@liskhq/lisk-cryptography';
+import {getAddressFromPublicKey, intToBuffer, stringToBuffer} from '@liskhq/lisk-cryptography';
 import {validator} from '@liskhq/lisk-validator';
 import {
   BaseTransaction,
@@ -10,11 +10,8 @@ import {
 } from '@liskhq/lisk-transactions';
 
 import {RefundAsset} from '../schemas';
-import {CrowdfundAccount, RefundTx, RefundTxAsset, Payment, Investment} from '../types';
-import {
-  REFUND_TYPE,
-  REFUND_STATUS
-} from "../constants";
+import {CrowdfundAccount, Investment, Payment, RefundTx, RefundTxAsset} from '../types';
+import {FUND_TIME, REFUND_STATUS, REFUND_TYPE} from "../constants";
 
 export class RefundTransaction extends BaseTransaction {
   readonly asset: RefundTxAsset;
@@ -84,13 +81,21 @@ export class RefundTransaction extends BaseTransaction {
   }
 
   public allowedToRefund(fundraiser: CrowdfundAccount): bigint {
-    const payedAmount = fundraiser.asset.payments.filter(p => p.type === 0).map(p => BigInt(p.amount)).reduce((accumulator, currentValue) => accumulator + currentValue);
+    const payedFilterd = fundraiser.asset.payments
+      .filter(p => p.type === 0)
+      .map(p => BigInt(p.amount));
+    const payedAmount = payedFilterd.length > 0 ? payedFilterd.reduce((accumulator, currentValue) => accumulator + currentValue) : BigInt(0);
     const amountLeft = BigInt(fundraiser.asset.goal) - payedAmount;
     return amountLeft * this.calculateVoteStake(fundraiser.asset.investments);
   }
 
-  public amountToClaim(goal: bigint, periods: number): bigint {
-    return goal / BigInt(periods);
+  public calculateFundsRaised(investments: Array<Investment>): bigint {
+    let fundsRaised = BigInt(0);
+    investments.map(investment => {
+      fundsRaised += BigInt(investment.amount);
+    });
+
+    return fundsRaised;
   }
 
   protected async applyAsset(store: StateStore): Promise<ReadonlyArray<TransactionError>> {
@@ -98,6 +103,8 @@ export class RefundTransaction extends BaseTransaction {
     const fundraiser = await store.account.getOrDefault(getAddressFromPublicKey(this.asset.fundraiser)) as CrowdfundAccount;
     const sender = await store.account.get(this.senderId);
     const allowedToRefund = this.allowedToRefund(fundraiser);
+    const fundsRaised = this.calculateFundsRaised(fundraiser.asset.investments);
+
     if (allowedToRefund === BigInt(0) || allowedToRefund !== BigInt(this.asset.amount)) {
       errors.push(
         new TransactionError(
@@ -123,7 +130,7 @@ export class RefundTransaction extends BaseTransaction {
       );
     }
 
-    if (fundraiser.asset.status !== REFUND_STATUS) {
+    if (fundsRaised === BigInt(fundraiser.asset.goal) && fundraiser.asset.status !== REFUND_STATUS) {
       errors.push(
         new TransactionError(
           'Fundraiser is not in refund state',
@@ -131,6 +138,15 @@ export class RefundTransaction extends BaseTransaction {
           '.asset.status',
           REFUND_STATUS,
           fundraiser.asset.status,
+        )
+      );
+    }
+
+    if (fundsRaised < BigInt(fundraiser.asset.goal) && fundraiser.asset.startFunding + FUND_TIME < store.chain.lastBlockHeader.timestamp) {
+      errors.push(
+        new TransactionError(
+          'Fundraiser is not finished yet',
+          this.id,
         )
       );
     }
@@ -150,6 +166,7 @@ export class RefundTransaction extends BaseTransaction {
         ...fundraiser.asset.payments,
         payment,
       ],
+      status: REFUND_STATUS,
     };
 
     store.account.set(fundraiser.address, fundraiser);

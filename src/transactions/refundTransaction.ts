@@ -84,9 +84,13 @@ export class RefundTransaction extends BaseTransaction {
     const payedFilterd = fundraiser.asset.payments
       .filter(p => p.type === 0)
       .map(p => BigInt(p.amount));
+    const payedSender = fundraiser.asset.payments
+      .filter(p => p.type === 1 && p.recipient === this.senderId)
+      .map(p => BigInt(p.amount));
+    const payedSenderAmount = payedSender.length > 0 ? payedSender.reduce((accumulator, currentValue) => accumulator + currentValue) : BigInt(0);
     const payedAmount = payedFilterd.length > 0 ? payedFilterd.reduce((accumulator, currentValue) => accumulator + currentValue) : BigInt(0);
     const amountLeft = this.calculateFundsRaised(fundraiser.asset.investments) - payedAmount;
-    return amountLeft * this.calculateVoteStake(fundraiser.asset.investments);
+    return (amountLeft * this.calculateVoteStake(fundraiser.asset.investments)) - payedSenderAmount;
   }
 
   public calculateFundsRaised(investments: Array<Investment>): bigint {

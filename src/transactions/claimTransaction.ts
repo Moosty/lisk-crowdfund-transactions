@@ -1,4 +1,4 @@
-import {intToBuffer, stringToBuffer, getAddressFromPublicKey} from '@liskhq/lisk-cryptography';
+import {getAddressFromPublicKey, intToBuffer, stringToBuffer} from '@liskhq/lisk-cryptography';
 import {validator} from '@liskhq/lisk-validator';
 import {
   BaseTransaction,
@@ -10,14 +10,8 @@ import {
 } from '@liskhq/lisk-transactions';
 
 import {ClaimAsset} from '../schemas';
-import {CrowdfundAccount, ClaimTx, ClaimTxAsset, Payment} from '../types';
-import {
-  ACTIVE_STATUS,
-  CLAIM_TYPE,
-  PERIOD,
-  ENDED_STATUS,
-  REFUND_STATUS
-} from "../constants";
+import {ClaimTx, ClaimTxAsset, CrowdfundAccount, Payment} from '../types';
+import {ACTIVE_STATUS, CLAIM_TYPE, ENDED_STATUS, PERIOD, REFUND_STATUS} from "../constants";
 
 export class ClaimTransaction extends BaseTransaction {
   readonly asset: ClaimTxAsset;
@@ -32,6 +26,7 @@ export class ClaimTransaction extends BaseTransaction {
     if (tx.asset) {
       this.asset = {
         fundraiser: tx.asset.fundraiser,
+        period: tx.asset.period,
         amount: tx.asset.amount,
         message: tx.asset.message ? tx.asset.message : "",
       } as ClaimTxAsset;
@@ -62,10 +57,15 @@ export class ClaimTransaction extends BaseTransaction {
       ? stringToBuffer(this.asset.message)
       : Buffer.alloc(0);
 
+    const periodBuffer = intToBuffer(
+      this.asset.period, 2
+    );
+
     return Buffer.concat([
       fundraiserBuffer,
       amountBuffer,
       messageBuffer,
+      periodBuffer,
     ]);
   }
 
@@ -88,10 +88,10 @@ export class ClaimTransaction extends BaseTransaction {
     const currentPeriod = this.calculateCurrentPeriod(currentTime, startTime);
     if (payments.find(p =>
       p.type === 0 &&
-        p.period === this.asset.period)) {
+      p.period === this.asset.period)) {
       return false;
     }
-    return (currentPeriod * PERIOD) + startTime < currentTime;
+    return currentPeriod >= this.asset.period && (this.asset.period * PERIOD) + startTime < currentTime;
   }
 
   public amountToClaim(goal: bigint, periods: number): bigint {

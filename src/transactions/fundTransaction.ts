@@ -137,7 +137,6 @@ export class FundTransaction extends BaseTransaction {
     fundraiser.balance += BigInt(this.asset.amount);
     fundraiser.asset = {
       ...fundraiser.asset,
-      owner: this.senderPublicKey,
       investments: [
         ...fundraiser.asset.investments,
         investment,
